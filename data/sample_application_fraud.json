@@ -1,0 +1,18 @@
+{
+  "application_id":        "LOAN-2024-FRAUD-001",
+  "applicant_name":        "Ruwan Kumara Dissanayake",
+  "national_id":           "199012345V",
+  "phone_number":          "0771234567",
+  "annual_income":         600000,
+  "monthly_expenses":      95000,
+  "loan_amount_requested": 9000000,
+  "loan_term_months":      120,
+  "loan_purpose":          "personal",
+  "property_value":        9500000,
+  "employment_status":     "self_employed",
+  "employer_name":         "Cash in Hand",
+  "years_employed":        0.3,
+  "existing_monthly_debt": 80000,
+  "credit_score":          490,
+  "address":               "PO Box 9999, Colombo 01"
+}

@@ -1,0 +1,18 @@
+{
+  "application_id":        "LOAN-2024-00142",
+  "applicant_name":        "Priya Kumari Fernando",
+  "national_id":           "199045678V",
+  "phone_number":          "0771234567",
+  "annual_income":         1800000,
+  "monthly_expenses":      45000,
+  "loan_amount_requested": 8000000,
+  "loan_term_months":      240,
+  "loan_purpose":          "home_purchase",
+  "property_value":        12000000,
+  "employment_status":     "full_time",
+  "employer_name":         "Dialog Axiata PLC",
+  "years_employed":        4.5,
+  "existing_monthly_debt": 15000,
+  "credit_score":          720,
+  "address":               "42 Galle Road, Colombo 03"
+}
