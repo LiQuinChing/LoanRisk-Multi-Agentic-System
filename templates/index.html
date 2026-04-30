@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ceylon National Bank — Loan Application</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:#1e293b;min-height:100vh}
+
+  /* Top bar */
+  .topbar{background:#1a3a6b;padding:0 32px;height:60px;display:flex;align-items:center;gap:12px}
+  .topbar .logo{color:#c9a84c;font-size:20px;font-weight:700;letter-spacing:.5px}
+  .topbar .sub{color:rgba(255,255,255,.6);font-size:13px;border-left:1px solid rgba(255,255,255,.2);padding-left:12px;margin-left:4px}
+  .topbar .badge{margin-left:auto;background:rgba(201,168,76,.15);border:1px solid #c9a84c;
+    color:#c9a84c;font-size:11px;padding:3px 10px;border-radius:99px}
+
+  /* Page header */
+  .page-hdr{background:#1a3a6b;padding:28px 32px 36px;color:#fff}
+  .page-hdr h1{font-size:22px;font-weight:600;margin-bottom:4px}
+  .page-hdr p{font-size:13px;opacity:.65}
+
+  /* Form wrapper */
+  .wrapper{max-width:860px;margin:-16px auto 40px;padding:0 20px}
+
+  /* Cards */
+  .card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:20px;overflow:hidden}
+  .card-hdr{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 22px;
+    display:flex;align-items:center;gap:10px}
+  .card-hdr .icon{width:28px;height:28px;border-radius:8px;background:#1a3a6b;
+    display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0}
+  .card-hdr h2{font-size:14px;font-weight:600;color:#1e293b}
+  .card-body{padding:20px 22px}
+
+  /* Grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid.three{grid-template-columns:1fr 1fr 1fr}
+  .span2{grid-column:span 2}
+
+  /* Fields */
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;font-weight:500;color:#64748b}
+  .field input,.field select{border:1px solid #cbd5e1;border-radius:7px;padding:9px 12px;
+    font-size:13px;color:#1e293b;transition:border-color .2s;background:#fff;width:100%}
+  .field input:focus,.field select:focus{outline:none;border-color:#1a3a6b;
+    box-shadow:0 0 0 3px rgba(26,58,107,.08)}
+  .field .hint{font-size:11px;color:#94a3b8}
+
+  /* Submit bar */
+  .submit-bar{background:#fff;border-radius:12px;border:1px solid #e2e8f0;
+    padding:18px 22px;display:flex;align-items:center;gap:16px}
+  .btn-submit{background:#1a3a6b;color:#fff;border:none;border-radius:8px;
+    padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn-submit:hover{background:#14305a}
+  .submit-note{font-size:12px;color:#94a3b8;line-height:1.5}
+
+  /* Info box */
+  .info-strip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;
+    padding:12px 16px;font-size:12px;color:#1e40af;margin-bottom:20px;line-height:1.6}
+
+  @media(max-width:600px){.grid,.grid.three{grid-template-columns:1fr}.span2{grid-column:span 1}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">CNB</div>
+  <div class="sub">Ceylon National Bank</div>
+  <div class="badge">Internal Staff Portal</div>
+</div>
+
+<div class="page-hdr">
+  <h1>Loan Application — AI Risk Assessment</h1>
+  <p>Complete all sections below. The AI system will assess financial and fraud risk automatically.</p>
+</div>
+
+<div class="wrapper">
+  <div class="info-strip">
+    <strong>Branch Officer:</strong> Fill in the applicant's details as presented. All fields marked
+    with an asterisk (*) are mandatory. The AI system will validate the data, calculate risk scores,
+    check fraud databases, and generate a decision report — typically within 3–5 minutes.
+  </div>
+
+  <form method="POST" action="/apply" id="loanForm">
+
+    <!-- ── Applicant Details ── -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="icon">1</div>
+        <h2>Applicant Details</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field span2">
+            <label>Full Name *</label>
+            <input type="text" name="applicant_name" placeholder="e.g. Priya Kumari Fernando" required>
+          </div>
+          <div class="field">
+            <label>National Identity Card (NIC) *</label>
+            <input type="text" name="national_id" placeholder="e.g. 199012345V or 199012345678" required>
+            <span class="hint">Old format: 9 digits + V/X &nbsp;|&nbsp; New format: 12 digits</span>
+          </div>
+          <div class="field">
+            <label>Phone Number *</label>
+            <input type="text" name="phone_number" placeholder="e.g. 0771234567" required>
+          </div>
+          <div class="field span2">
+            <label>Permanent Address *</label>
+            <input type="text" name="address" placeholder="e.g. 42 Galle Road, Colombo 03" required>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Employment Details ── -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="icon">2</div>
+        <h2>Employment Details</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field">
+            <label>Employment Status *</label>
+            <select name="employment_status" required>
+              <option value="">— Select —</option>
+              <option value="full_time">Full-time Employed</option>
+              <option value="part_time">Part-time Employed</option>
+              <option value="self_employed">Self-employed</option>
+              <option value="contract">Contract / Freelance</option>
+              <option value="retired">Retired</option>
+              <option value="unemployed">Unemployed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Employer / Business Name *</label>
+            <input type="text" name="employer_name" placeholder="e.g. Dialog Axiata PLC" required>
+          </div>
+          <div class="field">
+            <label>Years at Current Employer *</label>
+            <input type="number" name="years_employed" min="0" max="60" step="0.5"
+                   placeholder="e.g. 4.5" required>
+          </div>
+          <div class="field">
+            <label>Gross Annual Income (LKR) *</label>
+            <input type="number" name="annual_income" min="1" placeholder="e.g. 1800000" required>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Financial Details ── -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="icon">3</div>
+        <h2>Financial Details</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid three">
+          <div class="field">
+            <label>Monthly Living Expenses (LKR) *</label>
+            <input type="number" name="monthly_expenses" min="0" placeholder="e.g. 45000" required>
+          </div>
+          <div class="field">
+            <label>Existing Monthly Debt Payments (LKR) *</label>
+            <input type="number" name="existing_monthly_debt" min="0" placeholder="e.g. 15000" required>
+            <span class="hint">Loans, leases, credit cards</span>
+          </div>
+          <div class="field">
+            <label>Credit Score *</label>
+            <input type="number" name="credit_score" min="300" max="900" placeholder="e.g. 720" required>
+            <span class="hint">Range: 300 – 900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Loan Request ── -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="icon">4</div>
+        <h2>Loan Request</h2>
+      </div>
+      <div class="card-body">
+        <div class="grid">
+          <div class="field">
+            <label>Loan Amount Requested (LKR) *</label>
+            <input type="number" name="loan_amount_requested" min="1" placeholder="e.g. 8000000" required>
+          </div>
+          <div class="field">
+            <label>Loan Term *</label>
+            <select name="loan_term_months" required>
+              <option value="">— Select term —</option>
+              <option value="12">1 Year (12 months)</option>
+              <option value="24">2 Years (24 months)</option>
+              <option value="36">3 Years (36 months)</option>
+              <option value="60">5 Years (60 months)</option>
+              <option value="84">7 Years (84 months)</option>
+              <option value="120">10 Years (120 months)</option>
+              <option value="180">15 Years (180 months)</option>
+              <option value="240">20 Years (240 months)</option>
+              <option value="300">25 Years (300 months)</option>
+              <option value="360">30 Years (360 months)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Loan Purpose *</label>
+            <select name="loan_purpose" required>
+              <option value="">— Select purpose —</option>
+              <option value="home_purchase">Home Purchase</option>
+              <option value="refinance">Refinancing</option>
+              <option value="home_improvement">Home Improvement</option>
+              <option value="vehicle">Vehicle Purchase</option>
+              <option value="education">Education</option>
+              <option value="business">Business Expansion</option>
+              <option value="debt_consolidation">Debt Consolidation</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Property / Collateral Value (LKR) *</label>
+            <input type="number" name="property_value" min="1" placeholder="e.g. 12000000" required>
+            <span class="hint">Current market value of collateral offered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Submit ── -->
+    <div class="submit-bar">
+      <button type="submit" class="btn-submit" id="submitBtn">
+        Submit for AI Risk Assessment
+      </button>
+      <div class="submit-note">
+        By submitting, you confirm that all information provided is accurate.<br>
+        The AI assessment typically completes within 3–5 minutes.
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<script>
+document.getElementById('loanForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Submitting...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+});
+</script>
+
+</body>
+</html>

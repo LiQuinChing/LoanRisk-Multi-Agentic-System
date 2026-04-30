@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Processing — {{ app.application_id }}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#eef2f7;color:#1e293b;min-height:100vh}
+
+.topbar{background:#1a3a6b;padding:0 32px;height:60px;display:flex;align-items:center;gap:12px}
+.topbar .logo{color:#c9a84c;font-size:20px;font-weight:700}
+.topbar .sub{color:rgba(255,255,255,.6);font-size:13px;border-left:1px solid rgba(255,255,255,.2);padding-left:12px}
+.topbar .appid{margin-left:auto;color:rgba(255,255,255,.7);font-size:12px;font-family:monospace}
+
+.page-hdr{background:#1a3a6b;padding:22px 32px 32px;color:#fff}
+.page-hdr h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.page-hdr p{font-size:13px;opacity:.65}
+
+.wrapper{max-width:1100px;margin:-16px auto 40px;padding:0 20px;display:grid;
+  grid-template-columns:1fr 380px;gap:20px}
+
+/* Agent pipeline progress */
+.pipeline{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+.panel-hdr{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 20px;
+  font-size:13px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px}
+.panel-hdr .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;
+  animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Agent status cards */
+.agent-list{padding:16px}
+.agent-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:10px;
+  transition:all .3s;background:#fff}
+.agent-item.active{border-color:#3b82f6;background:#eff6ff}
+.agent-item.done{border-color:#22c55e;background:#f0fdf4}
+.agent-item.error{border-color:#ef4444;background:#fef2f2}
+.agent-top{display:flex;align-items:center;gap:10px}
+.agent-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;color:#fff}
+.a1{background:#6366f1}.a2{background:#f59e0b}.a3{background:#ef4444}.a4{background:#10b981}
+.agent-name{font-size:13px;font-weight:600;flex:1}
+.agent-status{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;flex-shrink:0}
+.status-wait{background:#f1f5f9;color:#64748b}
+.status-run{background:#dbeafe;color:#1d4ed8}
+.status-done{background:#dcfce7;color:#15803d}
+.status-err{background:#fee2e2;color:#b91c1c}
+.agent-msg{font-size:12px;color:#64748b;margin-top:6px;line-height:1.5;display:none}
+.agent-msg.show{display:block}
+.spinner{display:none;width:14px;height:14px;border:2px solid #bfdbfe;
+  border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.spinner.show{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Activity log */
+.log-panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;
+  overflow:hidden;display:flex;flex-direction:column;max-height:560px}
+.log-body{flex:1;overflow-y:auto;padding:14px 16px}
+.log-entry{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start}
+.log-entry .ltype{width:24px;height:24px;border-radius:6px;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.li{background:#6366f1}.lc{background:#22c55e}.lw{background:#f59e0b}
+.lh{background:#ef4444}.ls{background:#10b981}.lx{background:#64748b}
+.log-text{flex:1}
+.log-text .lt{font-size:12px;font-weight:600;color:#1e293b;line-height:1.4}
+.log-text .lm{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4}
+.log-text .la{font-size:10px;color:#94a3b8;margin-top:2px}
+.msg-arrow{font-size:11px;color:#6366f1;background:#eef2ff;padding:4px 10px;
+  border-radius:6px;margin-top:4px;display:inline-block}
+
+/* Final decision banner */
+.decision-banner{display:none;border-radius:12px;padding:20px 24px;
+  border:2px solid;text-align:center;margin-bottom:16px}
+.decision-banner.approve{background:#f0fdf4;border-color:#22c55e}
+.decision-banner.review{background:#fefce8;border-color:#eab308}
+.decision-banner.reject{background:#fef2f2;border-color:#ef4444}
+.decision-banner h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.decision-banner .approve h2{color:#15803d}
+.decision-banner .review h2{color:#854d0e}
+.decision-banner .reject h2{color:#991b1b}
+.btn-report{display:inline-block;margin-top:12px;padding:10px 22px;border-radius:8px;
+  background:#1a3a6b;color:#fff;font-size:13px;font-weight:600;text-decoration:none;
+  cursor:pointer}
+
+/* Suggestions panel */
+.suggestions{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;
+  padding:14px 16px;margin-top:12px;display:none}
+.suggestions h4{font-size:12px;font-weight:600;color:#1e40af;margin-bottom:8px}
+.suggestions ul{padding-left:16px;font-size:12px;color:#1e3a8a;line-height:1.7}
+
+/* FRAUD ALERT MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:520px;width:90%;overflow:hidden;
+  animation:slideIn .3s ease}
+@keyframes slideIn{from{transform:translateY(-30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-hdr{padding:18px 22px;display:flex;align-items:center;gap:10px}
+.modal-hdr.critical{background:#fef2f2;border-bottom:1px solid #fecaca}
+.modal-hdr.high{background:#fff7ed;border-bottom:1px solid #fed7aa}
+.modal-hdr.warning{background:#fefce8;border-bottom:1px solid #fef08a}
+.modal-hdr.success{background:#f0fdf4;border-bottom:1px solid #bbf7d0}
+.modal-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0}
+.modal-icon.critical{background:#fee2e2;color:#dc2626}
+.modal-icon.high{background:#ffedd5;color:#ea580c}
+.modal-icon.warning{background:#fef9c3;color:#ca8a04}
+.modal-icon.success{background:#dcfce7;color:#16a34a}
+.modal-title{font-size:15px;font-weight:700;flex:1}
+.modal-title.critical{color:#991b1b}
+.modal-title.high{color:#9a3412}
+.modal-title.warning{color:#854d0e}
+.modal-title.success{color:#15803d}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;
+  padding:0 4px;line-height:1}
+.modal-body{padding:18px 22px}
+.modal-action{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px}
+.modal-msg{font-size:13px;color:#374151;line-height:1.6;margin-bottom:12px}
+.modal-suggs{background:#f8fafc;border-radius:8px;padding:10px 14px}
+.modal-suggs p{font-size:12px;font-weight:600;color:#1e293b;margin-bottom:6px}
+.modal-suggs ul{padding-left:14px;font-size:12px;color:#374151;line-height:1.7}
+.modal-ftr{padding:12px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;
+  display:flex;justify-content:flex-end}
+.btn-ack{background:#1a3a6b;color:#fff;border:none;padding:8px 20px;border-radius:7px;
+  font-size:13px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">CNB</div>
+  <div class="sub">Ceylon National Bank</div>
+  <div class="appid">{{ app.application_id }}</div>
+</div>
+
+<div class="page-hdr">
+  <h1>AI Risk Assessment in Progress</h1>
+  <p>Applicant: <strong style="color:#fff">{{ app.applicant_name }}</strong>
+     &nbsp;|&nbsp; Loan: LKR {{ "{:,.0f}".format(app.loan_amount_requested or 0) }}
+     &nbsp;|&nbsp; Purpose: {{ app.loan_purpose }}</p>
+</div>
+
+<div class="wrapper">
+
+  <!-- LEFT: Agent pipeline -->
+  <div>
+    <!-- Decision Banner (hidden until complete) -->
+    <div id="decisionBanner" class="decision-banner">
+      <h2 id="decisionText"></h2>
+      <p id="decisionReason" style="font-size:13px;color:#475569;margin:8px 0"></p>
+      <a id="reportLink" class="btn-report" href="/report/{{ app_id }}" target="_blank">
+        View Full Report
+      </a>
+    </div>
+
+    <!-- Suggestions Panel -->
+    <div id="suggestionsPanel" class="suggestions">
+      <h4>Branch Manager — Recommended Actions</h4>
+      <ul id="suggestionsList"></ul>
+    </div>
+
+    <!-- Agent Status Cards -->
+    <div class="pipeline">
+      <div class="panel-hdr">
+        <div class="dot" id="processingDot"></div>
+        AI Assessment Pipeline
+      </div>
+      <div class="agent-list">
+        <div class="agent-item" id="ai1">
+          <div class="agent-top">
+            <div class="agent-icon a1">1</div>
+            <div class="agent-name">Agent 1 — Application Validator</div>
+            <div class="spinner" id="s1"></div>
+            <div class="agent-status status-wait" id="st1">Waiting</div>
+          </div>
+          <div class="agent-msg" id="m1"></div>
+        </div>
+        <div class="agent-item" id="ai2">
+          <div class="agent-top">
+            <div class="agent-icon a2">2</div>
+            <div class="agent-name">Agent 2 — Financial Risk Analyzer</div>
+            <div class="spinner" id="s2"></div>
+            <div class="agent-status status-wait" id="st2">Waiting</div>
+          </div>
+          <div class="agent-msg" id="m2"></div>
+        </div>
+        <div class="agent-item" id="ai3">
+          <div class="agent-top">
+            <div class="agent-icon a3">3</div>
+            <div class="agent-name">Agent 3 — Fraud Detector</div>
+            <div class="spinner" id="s3"></div>
+            <div class="agent-status status-wait" id="st3">Waiting</div>
+          </div>
+          <div class="agent-msg" id="m3"></div>
+        </div>
+        <div class="agent-item" id="ai4">
+          <div class="agent-top">
+            <div class="agent-icon a4">4</div>
+            <div class="agent-name">Agent 4 — Decision Writer</div>
+            <div class="spinner" id="s4"></div>
+            <div class="agent-status status-wait" id="st4">Waiting</div>
+          </div>
+          <div class="agent-msg" id="m4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Activity log -->
+  <div>
+    <div class="log-panel">
+      <div class="panel-hdr" style="gap:6px">
+        Live Activity Log
+        <span style="margin-left:auto;font-size:11px;color:#94a3b8;font-weight:400"
+              id="logCount">0 events</span>
+      </div>
+      <div class="log-body" id="logBody">
+        <div class="log-entry">
+          <div class="ltype lx">~</div>
+          <div class="log-text">
+            <div class="lt">Waiting for agents to start...</div>
+            <div class="lm">The AI pipeline will begin shortly.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Alert Modal -->
+<div class="modal-overlay" id="alertModal">
+  <div class="modal">
+    <div class="modal-hdr" id="modalHdr">
+      <div class="modal-icon" id="modalIcon"></div>
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-action" id="modalAction"></div>
+      <div class="modal-msg" id="modalMsg"></div>
+      <div class="modal-suggs" id="modalSuggs" style="display:none">
+        <p>Recommended Actions</p>
+        <ul id="modalSuggsList"></ul>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-ack" onclick="closeModal()">Acknowledged</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APP_ID    = "{{ app_id }}";
+let   logCount  = 0;
+const agentMap  = {
+  "Agent 1 — Validator": 1,
+  "Agent 1": 1,
+  "Agent 2 — Financial Analyzer": 2,
+  "Agent 2": 2,
+  "Agent 3 — Fraud Detector": 3,
+  "Agent 3": 3,
+  "Agent 4 — Decision Writer": 4,
+  "Agent 4": 4,
+};
+
+function agentNum(name) {
+  if (!name) return null;
+  for (const k of Object.keys(agentMap)) {
+    if (name.includes(k.split(" ")[0]) && name.includes(k.split(" ")[1] || "")) return agentMap[k];
+  }
+  // fallback: extract number from string like "Agent 2 — ..."
+  const m = name.match(/Agent\s+(\d)/i);
+  return m ? parseInt(m[1]) : null;
+}
+
+function setAgentStatus(n, status, msg) {
+  if (!n) return;
+  const card = document.getElementById(`ai${n}`);
+  const st   = document.getElementById(`st${n}`);
+  const sp   = document.getElementById(`s${n}`);
+  const m    = document.getElementById(`m${n}`);
+  if (!card) return;
+
+  card.className = "agent-item" + (status==="run"?" active":status==="done"?" done":status==="err"?" error":"");
+  const labels = {run:"Running",done:"Complete",err:"Error",wait:"Waiting"};
+  const cls    = {run:"status-run",done:"status-done",err:"status-err",wait:"status-wait"};
+  st.className = "agent-status " + (cls[status]||"status-wait");
+  st.textContent = labels[status] || status;
+  sp.className = "spinner" + (status==="run"?" show":"");
+  if (msg) { m.textContent = msg; m.className = "agent-msg show"; }
+}
+
+function addLog(icon, cls, title, message, sub) {
+  logCount++;
+  document.getElementById("logCount").textContent = `${logCount} event${logCount!==1?"s":""}`;
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  const subHtml = sub ? `<div class="la">${sub}</div>` : "";
+  div.innerHTML = `<div class="ltype ${cls}">${icon}</div>
+    <div class="log-text"><div class="lt">${title}</div>
+    <div class="lm">${message || ""}</div>${subHtml}</div>`;
+  const body = document.getElementById("logBody");
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showModal(severity, title, action, message, suggestions) {
+  const sev = severity === "critical" ? "critical"
+            : severity === "high"     ? "high"
+            : severity === "warning"  ? "warning"
+            : severity === "success"  ? "success"
+            : "warning";
+  const icons = {critical:"⚠",high:"!",warning:"~",success:"✓"};
+  document.getElementById("modalHdr").className   = `modal-hdr ${sev}`;
+  document.getElementById("modalIcon").className  = `modal-icon ${sev}`;
+  document.getElementById("modalIcon").textContent = icons[sev] || "!";
+  document.getElementById("modalTitle").className = `modal-title ${sev}`;
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalAction").textContent = action || "";
+  document.getElementById("modalMsg").textContent = message || "";
+  const sl   = document.getElementById("modalSuggsList");
+  const sp   = document.getElementById("modalSuggs");
+  sl.innerHTML = "";
+  if (suggestions && suggestions.length) {
+    suggestions.forEach(s => { const li=document.createElement("li"); li.textContent=s; sl.appendChild(li); });
+    sp.style.display = "block";
+  } else { sp.style.display = "none"; }
+  document.getElementById("alertModal").className = "modal-overlay show";
+}
+
+function closeModal() {
+  document.getElementById("alertModal").className = "modal-overlay";
+}
+
+function showDecision(decision, reasoning, suggestions) {
+  const banner = document.getElementById("decisionBanner");
+  const cls    = decision === "APPROVE" ? "approve" : decision === "REJECT" ? "reject" : "review";
+  const labels = {APPROVE:"APPROVED",REJECT:"REJECTED",MANUAL_REVIEW:"MANUAL REVIEW REQUIRED"};
+  banner.className = `decision-banner ${cls}`;
+  document.getElementById("decisionText").textContent = labels[decision] || decision;
+  document.getElementById("decisionReason").textContent = reasoning || "";
+  banner.style.display = "block";
+
+  if (suggestions && suggestions.length) {
+    const sp = document.getElementById("suggestionsPanel");
+    const ul = document.getElementById("suggestionsList");
+    suggestions.forEach(s => { const li=document.createElement("li"); li.textContent=s; ul.appendChild(li); });
+    sp.style.display = "block";
+  }
+  document.getElementById("processingDot").style.display = "none";
+}
+
+// ── SSE listener ───────────────────────────────────────────────
+const src = new EventSource(`/stream/${APP_ID}`);
+
+src.onmessage = function(e) {
+  const d = JSON.parse(e.data);
+  if (d.type === "HEARTBEAT") return;
+
+  const n = agentNum(d.agent || "");
+
+  switch (d.type) {
+
+    case "AGENT_START":
+      setAgentStatus(n, "run", d.message);
+      addLog("▶", "li", d.title, d.message, d.agent);
+      break;
+
+    case "AGENT_COMPLETE":
+      setAgentStatus(n, "done", d.message);
+      addLog("✓", "lc", d.title, d.message, d.agent);
+      break;
+
+    case "AGENT_MESSAGE":
+      addLog("→", "li", d.title, d.message, d.agent);
+      // Show as inter-agent message pill in active agent card
+      const arrow = document.createElement("div");
+      arrow.className = "msg-arrow";
+      arrow.textContent = `${d.title}: ${d.message.substring(0,80)}${d.message.length>80?"...":""}`;
+      const card = n ? document.getElementById(`ai${n}`) : null;
+      if (card) card.appendChild(arrow);
+      break;
+
+    case "VALIDATION_OK":
+      setAgentStatus(n||1, "done", d.message);
+      addLog("✓", "lc", d.title, d.message, d.agent);
+      break;
+
+    case "VALIDATION_FAIL":
+      setAgentStatus(n||1, "err", d.message);
+      addLog("✗", "lh", d.title, d.message, d.agent);
+      showModal("high", d.title, "", d.message, []);
+      break;
+
+    case "WEB_SEARCH":
+      addLog("W", "lx", d.title, d.message, d.agent);
+      break;
+
+    case "FINANCIAL_RESULT":
+    case "CREDIT_RISK":
+      const fSev = d.type === "CREDIT_RISK" ? "high" : "info";
+      addLog(d.type==="CREDIT_RISK"?"!":"$", d.type==="CREDIT_RISK"?"lw":"lc", d.title, d.message, d.agent);
+      if (d.type === "CREDIT_RISK") {
+        showModal("high", d.title, d.action || "", d.message, d.suggestions || []);
+      }
+      break;
+
+    case "FRAUD_ALERT":
+      addLog("⚠", "lh", d.title, d.message, d.agent);
+      setAgentStatus(3, "err", "FRAUD DETECTED");
+      showModal("critical", d.title, d.action || "Inform branch manager immediately.", d.message, d.suggestions || []);
+      break;
+
+    case "FRAUD_MEDIUM":
+      addLog("!", "lw", d.title, d.message, d.agent);
+      showModal("warning", d.title, "Manual verification recommended.", d.message, []);
+      break;
+
+    case "FRAUD_CLEAR":
+      addLog("✓", "ls", d.title, d.message, d.agent);
+      break;
+
+    case "FRAUD_DB_ERROR":
+      addLog("!", "lw", d.title, d.message, d.agent);
+      break;
+
+    case "FINAL_DECISION":
+      showDecision(d.title.split(": ")[1], d.message, d.suggestions || []);
+      setAgentStatus(4, "done", d.title);
+      addLog("✓", "ls", d.title, d.message.substring(0,80), d.agent);
+      if (d.severity === "error") {
+        showModal("critical", d.title, "See full report for details.", d.message, d.suggestions||[]);
+      } else if (d.severity === "warning") {
+        showModal("warning", d.title, "Escalate to Senior Credit Committee.", d.message, d.suggestions||[]);
+      }
+      break;
+
+    case "PIPELINE_COMPLETE":
+      src.close();
+      document.getElementById("processingDot").style.animationPlayState = "paused";
+      addLog("■", "lx", "Pipeline complete", "All agents finished. Report is ready.", "System");
+      break;
+
+    case "PIPELINE_ERROR":
+      addLog("✗", "lh", d.title, d.message, "System");
+      setAgentStatus(1,"err",""); setAgentStatus(2,"err","");
+      setAgentStatus(3,"err",""); setAgentStatus(4,"err","");
+      break;
+
+    default:
+      if (d.title || d.message) {
+        addLog("·", "lx", d.title||"Info", d.message||"", d.agent||"System");
+      }
+  }
+};
+
+src.onerror = function() {
+  src.close();
+  addLog("✗", "lh", "Connection lost", "Lost connection to server.", "System");
+};
+</script>
+</body>
+</html>
